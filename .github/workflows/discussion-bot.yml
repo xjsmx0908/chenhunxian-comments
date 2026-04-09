@@ -1,0 +1,114 @@
+name: discussion-bot
+
+on:
+  discussion:
+    types: [created]
+  discussion_comment:
+    types: [created]
+
+permissions:
+  discussions: write
+  contents: read
+
+jobs:
+  welcome:
+    if: github.event_name == 'discussion'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const discussion_number = context.payload.discussion.number;
+
+            const comments = await github.paginate(
+              github.rest.discussions.listComments,
+              { owner, repo, discussion_number, per_page: 100 }
+            );
+
+            if (comments.some(c => (c.body || '').includes('<!-- bot:welcome-v1 -->'))) {
+              core.info('welcome exists, skip');
+              return;
+            }
+
+            const zh = /[\u4e00-\u9fff]/.test(context.payload.discussion.title || '');
+            const body = zh
+              ? `欢迎留言 👋
+
+为了更快定位问题，建议补充：复现步骤、预期与实际结果、关键日志、环境信息。
+
+若是部署问题，可直接贴 \`docker compose ps\` 和 \`docker compose logs\` 输出。`
+              : `Welcome 👋
+
+For faster triage, please include: repro steps, expected vs actual behavior, logs, and environment info.
+
+For deployment issues, please share \`docker compose ps\` and \`docker compose logs\`.`;
+
+            await github.rest.discussions.createComment({
+              owner,
+              repo,
+              discussion_number,
+              body: `${body}
+
+<!-- bot:welcome-v1 -->`
+            });
+
+  auto-reply:
+    if: github.event_name == 'discussion_comment'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const discussion_number = context.payload.discussion.number;
+            const comment = context.payload.comment;
+            const actor = context.payload.sender?.login || '';
+
+            if (!comment?.body) return;
+            if ((comment.user?.type || '').toLowerCase() === 'bot' || actor.endsWith('[bot]')) return;
+
+            const rules = JSON.parse(
+              fs.readFileSync('.github/bot-rules.json', 'utf8')
+            ).sort((a, b) => a.priority - b.priority);
+
+            const text = String(comment.body).toLowerCase();
+            const hit = rules.find(r =>
+              (r.keywords || []).some(k => text.includes(String(k).toLowerCase()))
+            );
+
+            if (!hit) {
+              core.info('no keyword hit');
+              return;
+            }
+
+            const comments = await github.paginate(
+              github.rest.discussions.listComments,
+              { owner, repo, discussion_number, per_page: 100 }
+            );
+
+            const now = Date.now();
+            const hasRecentBotReply = comments.some(c => {
+              if ((c.user?.login || '') !== 'github-actions[bot]') return false;
+              if (!/<!-- bot:rule:/.test(c.body || '')) return false;
+              return now - new Date(c.created_at).getTime() < 10 * 60 * 1000;
+            });
+
+            if (hasRecentBotReply) {
+              core.info('rate limited');
+              return;
+            }
+
+            const isZh = /[\u4e00-\u9fff]/.test(comment.body);
+            const reply = `${isZh ? hit.template_zh : hit.template_en}
+
+<!-- bot:rule:${hit.id} -->`;
+
+            await github.rest.discussions.createComment({
+              owner,
+              repo,
+              discussion_number,
+              body: reply
+            });
