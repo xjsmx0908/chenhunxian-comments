@@ -1,39 +1,30 @@
 [
-    {
-      "id": "bug_report",
-      "priority": 10,
-      "keywords": ["报错", "错误", "异常", "bug", "error", "failed", "crash"],
-      "template_zh": "收到你的问题，先按这个最小排查清单补充信息：\n1) 触发步骤（一步一步）\n2) 预期结果 vs 实
-  际结果\n3) 关键日志/报错截图\n4) 环境信息（系统、浏览器/Node、容器版本）\n你补充后我会继续跟进定位。",
-      "template_en": "Thanks for reporting this. Please share:\n1) Steps to reproduce\n2) Expected vs actual
-  behavior\n3) Error logs/screenshots\n4) Environment info (OS, browser/Node, container version)\nI can help
-  triage once you provide these."
-    },
-    {
-      "id": "deploy_help",
-      "priority": 20,
-      "keywords": ["docker", "容器", "compose", "部署", "重建", "nginx"],
-      "template_zh": "这是部署/容器类问题，建议先检查：\n- `docker compose ps`\n- `docker compose logs -f buil
-  der blog`\n- `curl -I http://127.0.0.1:5147/`\n如果方便，请贴出关键日志片段。",
-      "template_en": "Deployment/container issue checklist:\n- `docker compose ps`\n- `docker compose logs -f
-  builder blog`\n- `curl -I http://127.0.0.1:5147/`\nPlease share key logs for deeper help."
-    },
-    {
-      "id": "seo_help",
-      "priority": 30,
-      "keywords": ["seo", "收录", "索引", "sitemap", "robots", "rich results"],
-      "template_zh": "SEO 相关可先自检：\n- `/robots.txt` 可访问\n- `/sitemap.xml` 可访问\n- 文章页有
-  canonical/og/twitter\n- Search Console 已提交 sitemap 并请求索引\n需要的话我可以按你的 URL 给一份逐项检查结
-  果。",
-      "template_en": "SEO quick checks:\n- `/robots.txt` is reachable\n- `/sitemap.xml` is reachable\n-
-  Canonical/OG/Twitter tags exist on article pages\n- Sitemap submitted in Search Console\nI can review your
-  URL step-by-step if needed."
-    },
-    {
-      "id": "thanks",
-      "priority": 90,
-      "keywords": ["谢谢", "感谢", "thx", "thanks"],
-      "template_zh": "谢谢反馈，欢迎继续提问或补充细节 🙌",
-      "template_en": "Thanks for the feedback — feel free to add more details 🙌"
-    }
+  {
+    "id": "bug_report",
+    "priority": 10,
+    "keywords": ["报错", "错误", "异常", "bug", "error", "failed", "crash"],
+    "template_zh": "收到你的问题，先按这个最小排查清单补充信息：\n1) 触发步骤（一步一步）\n2) 预期结果 vs 实际结果\n3) 关键日志/报错截图\n4) 环境信息（系统、浏览器/Node、容器版本）\n你补充后我会继续跟进定位。",
+    "template_en": "Thanks for reporting this. Please share:\n1) Steps to reproduce\n2) Expected vs actual behavior\n3) Error logs/screenshots\n4) Environment info (OS, browser/Node, container version)\nI can help triage once you provide these."
+  },
+  {
+    "id": "deploy_help",
+    "priority": 20,
+    "keywords": ["docker", "容器", "compose", "部署", "重建", "nginx"],
+    "template_zh": "这是部署/容器类问题，建议先检查：\n- `docker compose ps`\n- `docker compose logs -f builder blog`\n- `curl -I http://127.0.0.1:5147/`\n如果方便，请贴出关键日志片段。",
+    "template_en": "Deployment/container issue checklist:\n- `docker compose ps`\n- `docker compose logs -f builder blog`\n- `curl -I http://127.0.0.1:5147/`\nPlease share key logs for deeper help."
+  },
+  {
+    "id": "seo_help",
+    "priority": 30,
+    "keywords": ["seo", "收录", "索引", "sitemap", "robots", "rich results"],
+    "template_zh": "SEO 相关可先自检：\n- `/robots.txt` 可访问\n- `/sitemap.xml` 可访问\n- 文章页有 canonical/og/twitter\n- Search Console 已提交 sitemap 并请求索引\n需要的话我可以按你的 URL 给一份逐项检查结果。",
+    "template_en": "SEO quick checks:\n- `/robots.txt` is reachable\n- `/sitemap.xml` is reachable\n- Canonical/OG/Twitter tags exist on article pages\n- Sitemap submitted in Search Console\nI can review your URL step-by-step if needed."
+  },
+  {
+    "id": "thanks",
+    "priority": 90,
+    "keywords": ["谢谢", "感谢", "thx", "thanks"],
+    "template_zh": "谢谢反馈，欢迎继续提问或补充细节 🙌",
+    "template_en": "Thanks for the feedback — feel free to add more details 🙌"
+  }
 ]
