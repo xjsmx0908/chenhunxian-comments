@@ -21,6 +21,22 @@ jobs:
             const { owner, repo } = context.repo
             const discussion_number = context.payload.discussion.number
 
+            const resolveDiscussionId = async () => {
+              const nodeId = context.payload?.discussion?.node_id
+              if (nodeId) return nodeId
+              const data = await github.graphql(
+                `
+                query($owner: String!, $repo: String!, $number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    discussion(number: $number) { id }
+                  }
+                }
+                `,
+                { owner, repo, number: Number(discussion_number) },
+              )
+              return data?.repository?.discussion?.id
+            }
+
             const comments = await github.paginate(
               'GET /repos/{owner}/{repo}/discussions/{discussion_number}/comments',
               { owner, repo, discussion_number, per_page: 100 }
@@ -48,12 +64,26 @@ jobs:
                   'For deployment issues, please share `docker compose ps` and `docker compose logs`.'
                 ].join('\n')
 
-            await github.request('POST /repos/{owner}/{repo}/discussions/{discussion_number}/comments', {
-              owner,
-              repo,
-              discussion_number,
-              body: `${body}\n\n<!-- bot:welcome-v1 -->`
-            })
+            const discussionId = await resolveDiscussionId()
+            if (!discussionId) {
+              core.setFailed('Unable to resolve discussionId')
+              return
+            }
+
+            const result = await github.graphql(
+              `
+              mutation($discussionId: ID!, $body: String!) {
+                addDiscussionComment(input: { discussionId: $discussionId, body: $body }) {
+                  comment { id url }
+                }
+              }
+              `,
+              {
+                discussionId,
+                body: `${body}\n\n<!-- bot:welcome-v1 -->`,
+              },
+            )
+            core.info(`welcome posted: ${result?.addDiscussionComment?.comment?.url || 'ok'}`)
 
   auto-reply:
     if: github.event_name == 'discussion_comment'
@@ -68,6 +98,22 @@ jobs:
             const discussion_number = context.payload.discussion.number
             const comment = context.payload.comment
             const actor = context.payload.sender?.login || ''
+
+            const resolveDiscussionId = async () => {
+              const nodeId = context.payload?.discussion?.node_id
+              if (nodeId) return nodeId
+              const data = await github.graphql(
+                `
+                query($owner: String!, $repo: String!, $number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    discussion(number: $number) { id }
+                  }
+                }
+                `,
+                { owner, repo, number: Number(discussion_number) },
+              )
+              return data?.repository?.discussion?.id
+            }
 
             if (!comment?.body) return
             if ((comment.user?.type || '').toLowerCase() === 'bot' || actor.endsWith('[bot]')) return
@@ -112,9 +158,20 @@ jobs:
             const isZh = /[\u4e00-\u9fff]/.test(comment.body)
             const reply = `${isZh ? hit.template_zh : hit.template_en}\n\n<!-- bot:rule:${hit.id} -->`
 
-            await github.request('POST /repos/{owner}/{repo}/discussions/{discussion_number}/comments', {
-              owner,
-              repo,
-              discussion_number,
-              body: reply
-            })
+            const discussionId = await resolveDiscussionId()
+            if (!discussionId) {
+              core.setFailed('Unable to resolve discussionId')
+              return
+            }
+
+            const result = await github.graphql(
+              `
+              mutation($discussionId: ID!, $body: String!) {
+                addDiscussionComment(input: { discussionId: $discussionId, body: $body }) {
+                  comment { id url }
+                }
+              }
+              `,
+              { discussionId, body: reply },
+            )
+            core.info(`auto reply posted: ${result?.addDiscussionComment?.comment?.url || 'ok'}`)
