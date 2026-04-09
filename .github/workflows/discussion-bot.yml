@@ -15,14 +15,14 @@ jobs:
     if: github.event_name == 'discussion'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         with:
           script: |
             const { owner, repo } = context.repo
             const discussion_number = context.payload.discussion.number
 
             const comments = await github.paginate(
-              github.rest.discussions.listComments,
+              'GET /repos/{owner}/{repo}/discussions/{discussion_number}/comments',
               { owner, repo, discussion_number, per_page: 100 }
             )
 
@@ -48,7 +48,7 @@ jobs:
                   'For deployment issues, please share `docker compose ps` and `docker compose logs`.'
                 ].join('\n')
 
-            await github.rest.discussions.createComment({
+            await github.request('POST /repos/{owner}/{repo}/discussions/{discussion_number}/comments', {
               owner,
               repo,
               discussion_number,
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs')
@@ -72,9 +72,15 @@ jobs:
             if (!comment?.body) return
             if ((comment.user?.type || '').toLowerCase() === 'bot' || actor.endsWith('[bot]')) return
 
-            const rules = JSON.parse(
-              fs.readFileSync('.github/bot-rules.json', 'utf8')
-            ).sort((a, b) => a.priority - b.priority)
+            let rules = []
+            try {
+              rules = JSON.parse(
+                fs.readFileSync('.github/bot-rules.json', 'utf8')
+              ).sort((a, b) => a.priority - b.priority)
+            } catch (error) {
+              core.setFailed(`Invalid .github/bot-rules.json: ${error.message}`)
+              return
+            }
 
             const text = String(comment.body).toLowerCase()
             const hit = rules.find(r =>
@@ -87,7 +93,7 @@ jobs:
             }
 
             const comments = await github.paginate(
-              github.rest.discussions.listComments,
+              'GET /repos/{owner}/{repo}/discussions/{discussion_number}/comments',
               { owner, repo, discussion_number, per_page: 100 }
             )
 
@@ -106,7 +112,7 @@ jobs:
             const isZh = /[\u4e00-\u9fff]/.test(comment.body)
             const reply = `${isZh ? hit.template_zh : hit.template_en}\n\n<!-- bot:rule:${hit.id} -->`
 
-            await github.rest.discussions.createComment({
+            await github.request('POST /repos/{owner}/{repo}/discussions/{discussion_number}/comments', {
               owner,
               repo,
               discussion_number,
